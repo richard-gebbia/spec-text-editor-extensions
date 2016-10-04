@@ -1,0 +1,14 @@
+[
+    { "keys": ["super+m", "super+s"], "command": "show_resources" },
+    { "keys": ["super+m", "super+h"], "command": "hide_resources" },
+    { "keys": ["super+m", "super+f"], "command": "features_at_selection" },
+    { "keys": ["super+m", "super+a"], "command": "assign_resource" },
+    { "keys": ["super+m", "super+d"], "command": "dissociate_resource" },
+    { "keys": ["super+m", "super+p"], "command": "spec_scope" },
+    { "keys": ["super+m", "super+i"], "command": "diff_scope" },
+    { "keys": ["super+m", "super+r"], "command": "reload_spec" },
+    { "keys": ["super+m", "super+e"], "command": "resources_for_feature" },
+    { "keys": ["super+ctrl+o"], "command": "open_file_on_line" },
+    { "keys": ["super+ctrl+l"], "command": "peek_file_on_line" },
+    { "keys": ["super+ctrl+h"], "command": "hide_file_on_line" }
+]

@@ -1,0 +1,14 @@
+[
+    { "keys": ["ctrl+m", "ctrl+s"], "command": "show_resources" },
+    { "keys": ["ctrl+m", "ctrl+h"], "command": "hide_resources" },
+    { "keys": ["ctrl+m", "ctrl+f"], "command": "features_at_selection" },
+    { "keys": ["ctrl+m", "ctrl+a"], "command": "assign_resource" },
+    { "keys": ["ctrl+m", "ctrl+d"], "command": "dissociate_resource" },
+    { "keys": ["ctrl+m", "ctrl+p"], "command": "spec_scope" },
+    { "keys": ["ctrl+m", "ctrl+i"], "command": "diff_scope" },
+    { "keys": ["ctrl+m", "ctrl+r"], "command": "reload_spec" },
+    { "keys": ["ctrl+m", "ctrl+e"], "command": "resources_for_feature" },
+    { "keys": ["ctrl+alt+o"], "command": "open_file_on_line" },
+    { "keys": ["ctrl+alt+l"], "command": "peek_file_on_line" },
+    { "keys": ["ctrl+alt+h"], "command": "hide_file_on_line" }
+]
