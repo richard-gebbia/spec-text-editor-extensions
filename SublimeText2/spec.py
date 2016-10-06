@@ -15,18 +15,18 @@ def deprecated_resource(uid):
     }
 
 
-def features_by_uid(json_features):
-    uids_to_features = {}
-    for feature in json_features['features']:
-        # Note: maybe warn against features that have the same uid
+def requirements_by_uid(json_requirements):
+    uids_to_requirements = {}
+    for requirement in json_requirements['requirements']:
+        # Note: maybe warn against requirements that have the same uid
         #       (that should never happen)
-        uids_to_features[feature['uid']] = { 
-            'uid': feature['uid'],
-            'name': feature['name'],
-            'description': feature['description']
+        uids_to_requirements[requirement['uid']] = { 
+            'uid': requirement['uid'],
+            'name': requirement['name'],
+            'description': requirement['description']
         }
 
-    return uids_to_features
+    return uids_to_requirements
 
 
 def resources_by_file(json_resources):
@@ -40,23 +40,23 @@ def resources_by_file(json_resources):
         files_to_resources[resource['uri']['file']].append({ 
             'start': resource['uri']['start'],
             'end': resource['uri']['end'],
-            'featureUid': resource['featureUid']
+            'requirementUid': resource['requirementUid']
         })
 
     return files_to_resources
 
 
-def features_by_file(json_resources):
-    files_to_features = {}
+def requirements_by_file(json_resources):
+    files_to_requirements = {}
     for resource in json_resources:
         # if a list for this file already exists,
         # just append a new entry to the list
-        if resource['uri']['file'] not in files_to_features:
-            files_to_features[resource['uri']['file']] = set()
+        if resource['uri']['file'] not in files_to_requirements:
+            files_to_requirements[resource['uri']['file']] = set()
 
-        files_to_features[resource['uri']['file']].add(resource['featureUid'])
+        files_to_requirements[resource['uri']['file']].add(resource['requirementUid'])
 
-    return files_to_features
+    return files_to_requirements
 
 
 def dict_to_region(view, json_dict):
@@ -86,7 +86,7 @@ def resource_map_to_json(resource_map):
     for file_name, resources in resource_map.iteritems():
         for resource in resources:
             json_resources.append({
-                'featureUid': resource['featureUid'],
+                'requirementUid': resource['requirementUid'],
                 'uri': {
                     'file': file_name,
                     'start': resource['start'],
@@ -97,52 +97,52 @@ def resource_map_to_json(resource_map):
     return json_resources
 
 
-def features_at_selection(view, feature_uids, map_of_all_features):
-    # Find all regions with features in the current view
-    feature_regions = {}
-    for uid in feature_uids:
-        feature_regions[uid] = view.get_regions(c_rsrc + str(uid))
+def requirements_at_selection(view, requirement_uids, map_of_all_requirements):
+    # Find all regions with requirements in the current view
+    requirement_regions = {}
+    for uid in requirement_uids:
+        requirement_regions[uid] = view.get_regions(c_rsrc + str(uid))
 
-    uids_of_features_at_selection = []
+    uids_of_requirements_at_selection = []
 
     # Filter the regions by only the ones that are partially or wholly 
     # encapsulated in the currently selected text
-    for uid, regions in feature_regions.iteritems():
-        is_feature_in_selection = False
-        for feature_region in regions:
+    for uid, regions in requirement_regions.iteritems():
+        is_requirement_in_selection = False
+        for requirement_region in regions:
             for selected_region in view.sel():
-                if feature_region.intersects(selected_region):
-                    is_feature_in_selection = True
+                if requirement_region.intersects(selected_region):
+                    is_requirement_in_selection = True
                     break
 
-            if is_feature_in_selection:
+            if is_requirement_in_selection:
                 break
 
-        if is_feature_in_selection:
-            uids_of_features_at_selection.append(uid)
+        if is_requirement_in_selection:
+            uids_of_requirements_at_selection.append(uid)
 
-    # We have uids of all features, now get the features themselves into a list
+    # We have uids of all requirements, now get the requirements themselves into a list
     retval = []
-    for uid in uids_of_features_at_selection:
-        if uid not in map_of_all_features:
+    for uid in uids_of_requirements_at_selection:
+        if uid not in map_of_all_requirements:
             retval.append(deprecated_resource(uid))
         else:
-            retval.append(map_of_all_features[uid])
+            retval.append(map_of_all_requirements[uid])
 
     return retval
 
 
-def feature_string(feature):
+def requirement_string(requirement):
     return [
-        "Feature " + str(feature['uid']) + ": " + feature['name'],
-        feature['description']
+        "requirement " + str(requirement['uid']) + ": " + requirement['name'],
+        requirement['description']
     ]
 
 
-def resources_at_cursor(view, cursor_pos, feature_uids):
+def resources_at_cursor(view, cursor_pos, requirement_uids):
     retval = []
 
-    for uid in feature_uids:
+    for uid in requirement_uids:
         key = c_rsrc + str(uid)
         regions = view.get_regions(key)
         for index in range(len(regions)):
@@ -153,8 +153,8 @@ def resources_at_cursor(view, cursor_pos, feature_uids):
     return retval    
 
 
-def smallest_resource_at_cursor(view, cursor_pos, feature_uids):
-    resources = resources_at_cursor(view, cursor_pos, feature_uids)
+def smallest_resource_at_cursor(view, cursor_pos, requirement_uids):
+    resources = resources_at_cursor(view, cursor_pos, requirement_uids)
     if len(resources) == 0:
         return None, None, None
 
@@ -180,13 +180,13 @@ NOTE: Technically this is not a pure function (in fact it just does side effects
       but it is used as a local mutation inside otherwise pure functions for
       optimization purposes.
 """
-def write_spec_output_feature(c_string_io, feature):
+def write_spec_output_requirement(c_string_io, requirement):
     c_string_io.write("\n")
     c_string_io.write("------------\n")
-    c_string_io.write("Feature #" + str(feature['uid']) + "\n")
-    c_string_io.write("Name: " + feature['name'] + "\n")
+    c_string_io.write("requirement #" + str(requirement['uid']) + "\n")
+    c_string_io.write("Name: " + requirement['name'] + "\n")
     c_string_io.write("Description:\n")
-    c_string_io.write(feature['description'] + "\n")
+    c_string_io.write(requirement['description'] + "\n")
 
 
 """
@@ -207,10 +207,10 @@ def spec_scope_output(spec_scope):
     from cStringIO import StringIO
     output = StringIO()
 
-    output.write("Unaddressed features\n")
+    output.write("Unaddressed requirements\n")
     output.write("====================\n")
-    for feature in spec_scope['featuresNotAddressed']:
-        write_spec_output_feature(output, feature)
+    for requirement in spec_scope['requirementsNotAddressed']:
+        write_spec_output_requirement(output, requirement)
 
     output.write("\n\n")
     output.write("Unassociated (potentially deprecated) resources\n")
@@ -225,10 +225,10 @@ def diff_scope_output(diff_scope):
     from cStringIO import StringIO
     output = StringIO()
 
-    output.write("New or Unaddressed Features\n")
+    output.write("New or Unaddressed requirements\n")
     output.write("===========================\n")
-    for feature in diff_scope['featuresToAddress']:
-        write_spec_output_feature(output, feature)
+    for requirement in diff_scope['requirementsToAddress']:
+        write_spec_output_requirement(output, requirement)
 
     output.write("\n\n")
     output.write("Resources to Update\n")
@@ -245,11 +245,11 @@ def diff_scope_output(diff_scope):
     return output.getvalue()
 
 
-def resources_by_feature(feature, _resources_by_file):
+def resources_by_requirement(requirement, _resources_by_file):
     from cStringIO import StringIO
     output = StringIO()
 
-    write_spec_output_feature(output, feature)
+    write_spec_output_requirement(output, requirement)
 
     output.write("\n")
     output.write("Associated Resources:\n")
@@ -257,7 +257,7 @@ def resources_by_feature(feature, _resources_by_file):
     for file_name, resources in _resources_by_file.iteritems():
         for resource in resources:
             resource['file'] = file_name
-            if feature['uid'] == resource['featureUid']:
+            if requirement['uid'] == resource['requirementUid']:
                 write_spec_output_resource(output, resource)
     return output.getvalue()
 
@@ -329,10 +329,10 @@ class MarkResourcesOnLoad(sublime_plugin.EventListener):
         # mark all the text regions as resources
         regions_by_uid = {}
         for resource in resources:
-            if resource['featureUid'] not in regions_by_uid:
-                regions_by_uid[resource['featureUid']] = []
+            if resource['requirementUid'] not in regions_by_uid:
+                regions_by_uid[resource['requirementUid']] = []
 
-            regions_by_uid[resource['featureUid']].append(dict_to_region(view, resource))
+            regions_by_uid[resource['requirementUid']].append(dict_to_region(view, resource))
 
         # create the marked regions, but hidden
         for uid, region in regions_by_uid.iteritems():
@@ -356,20 +356,20 @@ class WriteResourcesOnSave(sublime_plugin.EventListener):
 
         # reset all resources in the current file
         try:
-            feature_uids = g_features_by_file[file_name]
+            requirement_uids = g_requirements_by_file[file_name]
         except KeyError:
             return
 
         g_resources_by_file[file_name] = []
 
-        for uid in feature_uids:
+        for uid in requirement_uids:
             regions = view.get_regions(c_rsrc + str(uid))
 
             for region in regions:
                 start_row, start_col = view.rowcol(region.begin())
                 end_row, end_col = view.rowcol(region.end())
                 g_resources_by_file[file_name].append({
-                    'featureUid': uid,
+                    'requirementUid': uid,
                     'start': {
                         'row': start_row,
                         'col': start_col
@@ -393,7 +393,7 @@ class WriteResourcesOnSave(sublime_plugin.EventListener):
 
 """
 Highlights all regions of text that have been marked as associated with a
-feature.
+requirement.
 """
 class ShowResourcesCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -405,10 +405,10 @@ class ShowResourcesCommand(sublime_plugin.TextCommand):
             print "Current file does not have a name."
             return
 
-        feature_uids = g_features_by_file[file_name]
+        requirement_uids = g_requirements_by_file[file_name]
 
-        # For every feature, highlight the text associated with that feature
-        for uid in feature_uids:
+        # For every requirement, highlight the text associated with that requirement
+        for uid in requirement_uids:
             key = c_rsrc + str(uid)
             regions = self.view.get_regions(key)
             self.view.erase_regions(key)
@@ -433,11 +433,11 @@ class HideResourcesCommand(sublime_plugin.TextCommand):
             print "Current file does not have a name."
             return
 
-        feature_uids = g_features_by_file[file_name]    
+        requirement_uids = g_requirements_by_file[file_name]    
         regions = []
 
-        # For every feature, find its associated text and de-highlight it
-        for uid in feature_uids:
+        # For every requirement, find its associated text and de-highlight it
+        for uid in requirement_uids:
             key = c_rsrc + str(uid)
             regions = self.view.get_regions(key)
             self.view.erase_regions(key)
@@ -449,10 +449,10 @@ class HideResourcesCommand(sublime_plugin.TextCommand):
         g_is_showing_resources = False
 
 """
-Opens a new window that displays all features associated with the current
+Opens a new window that displays all requirements associated with the current
 selection or cursor position.
 """
-class FeaturesAtSelectionCommand(sublime_plugin.WindowCommand):
+class RequirementsAtSelectionCommand(sublime_plugin.WindowCommand):
     def run(self):
         # Get the current file
         active_view = self.window.active_view()
@@ -465,41 +465,41 @@ class FeaturesAtSelectionCommand(sublime_plugin.WindowCommand):
             print "Current file does not have a name."
             return
 
-        features = features_at_selection(
+        requirements = requirements_at_selection(
             active_view, 
-            g_features_by_file[file_name], 
-            g_features_by_uid)
+            g_requirements_by_file[file_name], 
+            g_requirements_by_uid)
 
         string_to_display = ""
-        for feature in features:
+        for requirement in requirements:
             string_to_display += "\n"
             string_to_display += "------------\n"
-            string_to_display += "Feature #" + str(feature['uid']) + "\n"
-            string_to_display += "Name:" + feature['name'] + "\n"
+            string_to_display += "requirement #" + str(requirement['uid']) + "\n"
+            string_to_display += "Name:" + requirement['name'] + "\n"
             string_to_display += "Description:\n"
-            string_to_display += feature['description'] + "\n"
+            string_to_display += requirement['description'] + "\n"
 
         display_in_new_file(self.window, string_to_display)
 
 
 """
-Adds a new resource or reassigns a resource to a different feature.
+Adds a new resource or reassigns a resource to a different requirement.
 
-Pops up a dialog box to select a feature.
+Pops up a dialog box to select a requirement.
 
 For each cursor:
 - If a region of text is selected, then this command will add the selected 
 region as a resource.
 
 - If no region of text is selected, then this command will try to assign the
-smallest resource containing the cursor to the selected feature.
+smallest resource containing the cursor to the selected requirement.
 
 - If no region of text is selected and the cursor is not currently contained in
 any resource, this command will do nothing.
 """
 class AssignResourceCommand(sublime_plugin.WindowCommand):
     def run(self):
-        global g_features_by_file
+        global g_requirements_by_file
 
         # Get the current file
         active_view = self.window.active_view()
@@ -512,27 +512,27 @@ class AssignResourceCommand(sublime_plugin.WindowCommand):
             print "Current file does not have a name."
             return
 
-        feature_strings = []
+        requirement_strings = []
         string_uids = []
-        for uid, feature in g_features_by_uid.iteritems():
-            feature_strings.append(feature_string(feature))
+        for uid, requirement in g_requirements_by_uid.iteritems():
+            requirement_strings.append(requirement_string(requirement))
             string_uids.append(uid)
 
-        def on_feature_select(index):
-            # "index" will be -1 if no feature was selected
+        def on_requirement_select(index):
+            # "index" will be -1 if no requirement was selected
             if index == -1:
                 return
 
-            feature_uid = string_uids[index]
-            key_to_add = c_rsrc + str(feature_uid)
+            requirement_uid = string_uids[index]
+            key_to_add = c_rsrc + str(requirement_uid)
             regions_to_add = active_view.get_regions(key_to_add)
 
             for region in active_view.sel():
                 # if the selection covers a region of text
                 if region.size() > 0:
-                    if file_name not in g_features_by_file:
-                        g_features_by_file[file_name] = set()
-                    g_features_by_file[file_name].add(feature_uid)
+                    if file_name not in g_requirements_by_file:
+                        g_requirements_by_file[file_name] = set()
+                    g_requirements_by_file[file_name].add(requirement_uid)
 
                     regions_to_add.append(region)
 
@@ -542,7 +542,7 @@ class AssignResourceCommand(sublime_plugin.WindowCommand):
                 # otherwise the region is a cursor at a location
                 else:
                     resource, uid, index = smallest_resource_at_cursor(
-                        active_view, region.begin(), g_features_by_file[file_name])
+                        active_view, region.begin(), g_requirements_by_file[file_name])
                     key = c_rsrc + str(uid)
 
                     if resource is None:
@@ -553,7 +553,7 @@ class AssignResourceCommand(sublime_plugin.WindowCommand):
                     active_view.add_regions(key_to_add, regions_to_add, 
                         c_scope, c_icon, add_regions_flags(g_is_showing_resources))
 
-        self.window.show_quick_panel(feature_strings, on_feature_select)
+        self.window.show_quick_panel(requirement_strings, on_requirement_select)
 
 
 class DissociateResourceCommand(sublime_plugin.WindowCommand):
@@ -571,23 +571,23 @@ class DissociateResourceCommand(sublime_plugin.WindowCommand):
 
         for cursor_pos in active_view.sel():
             resources_to_delete = resources_at_cursor(
-                active_view, cursor_pos.begin(), g_features_by_file[file_name])
+                active_view, cursor_pos.begin(), g_requirements_by_file[file_name])
 
             if len(resources_to_delete) == 0:
                 print "No resources to dissociate at cursor position."
                 return
 
-            feature_strings = []
+            requirement_strings = []
             for _, uid, _ in resources_to_delete: 
-                if uid not in g_features_by_uid:
-                    _feature_string = feature_string(deprecated_resource(uid))
+                if uid not in g_requirements_by_uid:
+                    _requirement_string = requirement_string(deprecated_resource(uid))
                 else:
-                    _feature_string = feature_string(g_features_by_uid[uid])
+                    _requirement_string = requirement_string(g_requirements_by_uid[uid])
 
-                feature_strings.append(_feature_string)
+                requirement_strings.append(_requirement_string)
 
-            def on_feature_select(index):
-                # "index" will be -1 if no feature was selected
+            def on_requirement_select(index):
+                # "index" will be -1 if no requirement was selected
                 if index == -1:
                     return
 
@@ -595,7 +595,7 @@ class DissociateResourceCommand(sublime_plugin.WindowCommand):
                 key = c_rsrc + str(uid)
                 erase_region_at_index(active_view, key, regions_index)
 
-            self.window.show_quick_panel(feature_strings, on_feature_select)
+            self.window.show_quick_panel(requirement_strings, on_requirement_select)
 
 
 class SpecScopeCommand(sublime_plugin.WindowCommand):
@@ -663,27 +663,27 @@ class ReloadSpecCommand(sublime_plugin.TextCommand):
 
         with spec_file:
             json_spec = json.load(spec_file)
-            g_features_by_uid = features_by_uid(json_spec)
+            g_requirements_by_uid = requirements_by_uid(json_spec)
 
 
-class ResourcesForFeature(sublime_plugin.WindowCommand):
+class ResourcesForRequirement(sublime_plugin.WindowCommand):
     def run(self):
-        feature_strings = []
+        requirement_strings = []
         string_uids = []
-        for uid, feature in g_features_by_uid.iteritems():
-            feature_strings.append(feature_string(feature))
+        for uid, requirement in g_requirements_by_uid.iteritems():
+            requirement_strings.append(requirement_string(requirement))
             string_uids.append(uid)
 
-        def on_feature_select(index):
-            # "index" will be -1 if no feature was selected
+        def on_requirement_select(index):
+            # "index" will be -1 if no requirement was selected
             if index == -1:
                 return
 
-            resource_listing = resources_by_feature(
-                g_features_by_uid[string_uids[index]], g_resources_by_file)
+            resource_listing = resources_by_requirement(
+                g_requirements_by_uid[string_uids[index]], g_resources_by_file)
             display_in_new_file(self.window, resource_listing)
 
-        self.window.show_quick_panel(feature_strings, on_feature_select)
+        self.window.show_quick_panel(requirement_strings, on_requirement_select)
 
 
 class OpenFileOnLine(sublime_plugin.TextCommand):
@@ -734,18 +734,18 @@ c_scope = "meta.block"
 c_icon = "bookmark"
 c_base_name = "Spec.sublime-settings"
 g_main_folder = ""
-g_features_by_uid = {}
+g_requirements_by_uid = {}
 g_resources_by_file = {}
-g_features_by_file = {}
+g_requirements_by_file = {}
 g_main_has_run = False
 g_is_showing_resources = False
 g_spec_path = "spec"
 
 def main():
     global g_main_folder
-    global g_features_by_uid
+    global g_requirements_by_uid
     global g_resources_by_file
-    global g_features_by_file
+    global g_requirements_by_file
     global g_main_has_run
     global g_spec_path
 
@@ -787,9 +787,9 @@ def main():
     with spec_file and resources_file:
         json_spec = json.load(spec_file)
         json_resources = json.load(resources_file)
-        g_features_by_uid = features_by_uid(json_spec)
+        g_requirements_by_uid = requirements_by_uid(json_spec)
         g_resources_by_file = resources_by_file(json_resources)
-        g_features_by_file = features_by_file(json_resources)
+        g_requirements_by_file = requirements_by_file(json_resources)
         g_main_has_run = True
 
 
